@@ -12,6 +12,10 @@ export const CATEGORIES = [
 export const categorySchema = z.enum(CATEGORIES)
 export type Category = z.infer<typeof categorySchema>
 
+export const STATUSES = ['skipped', 'bought'] as const
+export const statusSchema = z.enum(STATUSES)
+export type Status = z.infer<typeof statusSchema>
+
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD')
 
 export const entryInputSchema = z.object({
@@ -23,7 +27,9 @@ export const entryInputSchema = z.object({
 })
 export type EntryInput = z.infer<typeof entryInputSchema>
 
-export const entryPatchSchema = entryInputSchema.partial()
+export const entryPatchSchema = entryInputSchema.partial().extend({ status: statusSchema.optional() })
+
+export type EntryPatch = z.infer<typeof entryPatchSchema>
 
 export interface Entry {
   id: number
@@ -32,6 +38,7 @@ export interface Entry {
   category: Category
   note: string | null
   skippedAt: string
+  status: Status
   createdAt: string
 }
 

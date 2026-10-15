@@ -14,14 +14,14 @@ summary.get('/', (c) => {
       `SELECT COALESCE(SUM(amount_cents), 0) AS totalCents,
               COALESCE(SUM(CASE WHEN skipped_at >= ? THEN amount_cents END), 0) AS monthCents,
               COUNT(*) AS count
-       FROM entries WHERE user_id = ?`,
+       FROM entries WHERE user_id = ? AND status = 'skipped'`,
     )
     .get(monthStart, id) as { totalCents: number; monthCents: number; count: number }
 
   const top = db
     .prepare(
       `SELECT category, SUM(amount_cents) AS cents FROM entries
-       WHERE user_id = ? GROUP BY category ORDER BY cents DESC LIMIT 1`,
+       WHERE user_id = ? AND status = 'skipped' GROUP BY category ORDER BY cents DESC LIMIT 1`,
     )
     .get(id) as { category: Category; cents: number } | undefined
 
@@ -33,7 +33,8 @@ summary.get('/', (c) => {
   if (g) {
     const { s } = db
       .prepare(
-        'SELECT COALESCE(SUM(amount_cents), 0) AS s FROM entries WHERE user_id = ? AND skipped_at >= ?',
+        `SELECT COALESCE(SUM(amount_cents), 0) AS s FROM entries
+         WHERE user_id = ? AND status = 'skipped' AND skipped_at >= ?`,
       )
       .get(id, g.startedAt) as { s: number }
     goalOut = {

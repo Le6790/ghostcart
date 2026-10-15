@@ -1,4 +1,4 @@
-import type { Entry, EntryInput, Goal, GoalInput, Me, Summary } from '../shared/schemas.ts'
+import type { Entry, EntryInput, EntryPatch, Goal, GoalInput, Me, Summary } from '../shared/schemas.ts'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
@@ -19,6 +19,7 @@ export const api = {
     return request<Entry[]>(`/entries${qs.size ? `?${qs}` : ''}`)
   },
   addEntry: (e: EntryInput) => request<Entry>('/entries', body('POST', e)),
+  updateEntry: (id: number, patch: EntryPatch) => request<Entry>(`/entries/${id}`, body('PATCH', patch)),
   deleteEntry: (id: number) => request<void>(`/entries/${id}`, { method: 'DELETE' }),
   setGoal: (g: GoalInput) => request<Goal>('/goal', body('PUT', g)),
   clearGoal: () => request<void>('/goal', { method: 'DELETE' }),

@@ -9,6 +9,7 @@ interface Row {
   category: Entry['category']
   note: string | null
   skipped_at: string
+  status: Entry['status']
   created_at: string
 }
 
@@ -19,6 +20,7 @@ const toEntry = (r: Row): Entry => ({
   category: r.category,
   note: r.note,
   skippedAt: r.skipped_at,
+  status: r.status,
   createdAt: r.created_at,
 })
 
@@ -63,6 +65,7 @@ entries.patch('/:id', async (c) => {
     category: p.category,
     note: p.note,
     skipped_at: p.skippedAt,
+    status: p.status,
   }
   const sets = Object.keys(cols).filter((k) => cols[k] !== undefined)
   if (sets.length === 0) return c.json({ error: 'No fields to update' }, 400)

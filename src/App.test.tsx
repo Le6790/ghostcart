@@ -33,6 +33,7 @@ const entry = {
   category: 'dining' as const,
   note: null,
   skippedAt: '2026-10-01',
+  status: 'skipped' as const,
   createdAt: '',
 }
 

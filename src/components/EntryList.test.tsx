@@ -12,6 +12,7 @@ const entry = (over: Partial<Entry> = {}): Entry => ({
   category: 'dining',
   note: null,
   skippedAt: '2026-10-01',
+  status: 'skipped',
   createdAt: '2026-10-01 12:00:00',
   ...over,
 })
@@ -34,5 +35,18 @@ describe('EntryList', () => {
     render(<EntryList entries={[entry({ id: 1 }), entry({ id: 2, title: 'Shoes' })]} onDelete={onDelete} />)
     await userEvent.click(screen.getByRole('button', { name: 'Delete Shoes' }))
     expect(onDelete).toHaveBeenCalledWith(2)
+  })
+
+  it('offers to mark a skipped entry as bought and calls onToggleStatus', async () => {
+    const onToggleStatus = vi.fn()
+    const e = entry({ id: 3 })
+    render(<EntryList entries={[e]} onDelete={() => {}} onToggleStatus={onToggleStatus} />)
+    await userEvent.click(screen.getByRole('button', { name: 'I bought it' }))
+    expect(onToggleStatus).toHaveBeenCalledWith(e)
+  })
+
+  it('shows Undo for a bought entry', () => {
+    render(<EntryList entries={[entry({ status: 'bought' })]} onDelete={() => {}} onToggleStatus={() => {}} />)
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument()
   })
 })

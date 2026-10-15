@@ -40,6 +40,26 @@ describe('/summary', () => {
     expect(s).toMatchObject({ totalCents: 1500, monthCents: 500, count: 2 })
   })
 
+  it('excludes entries marked as bought from totals, count, top category and goal', async () => {
+    await app.request('/api/goal', {
+      method: 'PUT',
+      headers: h('a@x'),
+      body: JSON.stringify({ name: 'Trip', targetCents: 10000 }),
+    })
+    const started = (await (await app.request('/api/goal', { headers: h('a@x') })).json() as { startedAt: string }).startedAt
+    const kept = (await (await add('a@x', 'kept', 300, started, 'dining')).json()) as { status: string }
+    const slipped = (await (await add('a@x', 'slipped', 900, started, 'travel')).json()) as { id: number }
+    expect(kept.status).toBe('skipped')
+    await app.request(`/api/entries/${slipped.id}`, {
+      method: 'PATCH',
+      headers: h('a@x'),
+      body: JSON.stringify({ status: 'bought' }),
+    })
+    const s = await summary('a@x')
+    expect(s).toMatchObject({ totalCents: 300, count: 1, topCategory: { category: 'dining', cents: 300 } })
+    expect(s.goal.savedCents).toBe(300)
+  })
+
   it('picks the top category by total, not by count', async () => {
     await add('a@x', 'a', 100, '2026-10-01', 'dining')
     await add('a@x', 'b', 100, '2026-10-01', 'dining')

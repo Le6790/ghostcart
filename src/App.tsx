@@ -65,7 +65,10 @@ export default function App() {
           {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
-      <EntryList entries={entries} onDelete={async (id) => { await api.deleteEntry(id); await refresh() }} />
+      <EntryList
+        entries={entries}
+        onToggleStatus={async (e) => { await api.updateEntry(e.id, { status: e.status === 'skipped' ? 'bought' : 'skipped' }); await refresh() }}
+        onDelete={async (id) => { await api.deleteEntry(id); await refresh() }} />
     </div>
   )
 }
