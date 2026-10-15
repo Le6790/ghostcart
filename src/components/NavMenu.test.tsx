@@ -2,13 +2,13 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { NavMenu } from './NavMenu.tsx'
 
-const setup = (path = '/') => {
+const setup = (path = '/', onRefresh = vi.fn()) => {
   render(
     <MemoryRouter initialEntries={[path]}>
-      <NavMenu />
+      <NavMenu onRefresh={onRefresh} />
     </MemoryRouter>,
   )
   return { user: userEvent.setup(), button: screen.getByRole('button', { name: 'Menu' }) }
@@ -45,5 +45,13 @@ describe('NavMenu', () => {
     await user.click(button)
     expect(screen.getByRole('link', { name: 'Trends' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current')
+  })
+
+  it('has a Refresh action that calls onRefresh', async () => {
+    const onRefresh = vi.fn()
+    const { user, button } = setup('/', onRefresh)
+    await user.click(button)
+    await user.click(screen.getByRole('button', { name: 'Refresh' }))
+    expect(onRefresh).toHaveBeenCalledTimes(1)
   })
 })

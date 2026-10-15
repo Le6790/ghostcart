@@ -6,7 +6,7 @@ const ITEMS = [
   { to: '/trends', label: 'Trends', end: false },
 ]
 
-export function NavMenu() {
+export function NavMenu({ onRefresh = () => window.location.reload() }: { onRefresh?: () => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -54,6 +54,14 @@ export function NavMenu() {
               {i.label}
             </NavLink>
           ))}
+          {/* Home Screen web apps have no browser reload button, so offer one here. */}
+          <button
+            type="button"
+            className="block w-full border-t border-slate-100 px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+            onClick={onRefresh}
+          >
+            Refresh
+          </button>
         </nav>
       )}
     </div>
