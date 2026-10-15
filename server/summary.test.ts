@@ -1,0 +1,85 @@
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createApp } from './app.ts'
+import { openDb } from './db.ts'
+
+let app: ReturnType<typeof createApp>
+let db: ReturnType<typeof openDb>
+beforeEach(() => {
+  db = openDb(':memory:')
+  app = createApp(db)
+})
+
+const h = (login: string) => ({ 'Tailscale-User-Login': login, 'content-type': 'application/json' })
+const add = (login: string, title: string, amountCents: number, skippedAt: string, category = 'dining') =>
+  app.request('/api/entries', {
+    method: 'POST',
+    headers: h(login),
+    body: JSON.stringify({ title, amountCents, category, skippedAt }),
+  })
+const summary = async (login: string) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (await (await app.request('/api/summary', { headers: h(login) })).json()) as any
+
+const thisMonth = new Date().toISOString().slice(0, 7)
+
+describe('/summary', () => {
+  it('is zeroed for a new user', async () => {
+    expect(await summary('a@x')).toEqual({
+      totalCents: 0,
+      monthCents: 0,
+      count: 0,
+      topCategory: null,
+      goal: null,
+    })
+  })
+
+  it('separates this month from all time', async () => {
+    await add('a@x', 'old', 1000, '2020-01-15')
+    await add('a@x', 'now', 500, `${thisMonth}-01`)
+    const s = await summary('a@x')
+    expect(s).toMatchObject({ totalCents: 1500, monthCents: 500, count: 2 })
+  })
+
+  it('picks the top category by total, not by count', async () => {
+    await add('a@x', 'a', 100, '2026-10-01', 'dining')
+    await add('a@x', 'b', 100, '2026-10-01', 'dining')
+    await add('a@x', 'c', 900, '2026-10-01', 'travel')
+    expect((await summary('a@x')).topCategory).toEqual({ category: 'travel', cents: 900 })
+  })
+
+  it('does not count other users', async () => {
+    await add('a@x', 'a', 100, '2026-10-01')
+    await add('b@x', 'b', 700, '2026-10-01')
+    expect((await summary('a@x')).totalCents).toBe(100)
+  })
+
+  describe('goal progress', () => {
+    const setGoal = async (login: string, targetCents: number, startedAt = '2026-10-01') => {
+      await app.request('/api/goal', {
+        method: 'PUT',
+        headers: h(login),
+        body: JSON.stringify({ name: 'Trip', targetCents }),
+      })
+      db.prepare('UPDATE goals SET started_at = ?').run(startedAt)
+    }
+
+    it('only counts entries on or after the goal start date', async () => {
+      await setGoal('a@x', 10000, '2026-10-05')
+      await add('a@x', 'before', 4000, '2026-10-04')
+      await add('a@x', 'on', 2000, '2026-10-05')
+      await add('a@x', 'after', 1000, '2026-10-06')
+      expect((await summary('a@x')).goal).toMatchObject({ savedCents: 3000, percent: 30, reached: false })
+    })
+
+    it('caps percent at 100 and flags reached', async () => {
+      await setGoal('a@x', 1000)
+      await add('a@x', 'big', 5000, '2026-10-02')
+      expect((await summary('a@x')).goal).toMatchObject({ savedCents: 5000, percent: 100, reached: true })
+    })
+
+    it('is 0% with no entries', async () => {
+      await setGoal('a@x', 1000)
+      expect((await summary('a@x')).goal).toMatchObject({ savedCents: 0, percent: 0, reached: false })
+    })
+  })
+})
