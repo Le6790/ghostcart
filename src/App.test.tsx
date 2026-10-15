@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
@@ -97,6 +97,47 @@ describe('App', () => {
     renderApp()
     await userEvent.click(await screen.findByRole('button', { name: 'Delete Sushi' }))
     expect(m.deleteEntry).toHaveBeenCalledWith(1)
+  })
+
+  it('offers Undo after deleting an entry and re-creates it', async () => {
+    m.deleteEntry.mockResolvedValue(undefined)
+    m.addEntry.mockResolvedValue({ ...entry, id: 2 })
+    renderApp()
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Delete Sushi' }))
+    expect(await screen.findByText('"Sushi" deleted.')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Undo' }))
+    await waitFor(() =>
+      expect(m.addEntry).toHaveBeenCalledWith({ title: 'Sushi', amountCents: 4500, category: 'dining', note: null, skippedAt: '2026-10-01' }),
+    )
+    expect(m.updateEntry).not.toHaveBeenCalled()
+    await waitFor(() => expect(screen.queryByText('"Sushi" deleted.')).not.toBeInTheDocument())
+  })
+
+  it('undoing a deleted bought entry restores its status', async () => {
+    m.entries.mockResolvedValue([{ ...entry, status: 'bought' as const }])
+    m.deleteEntry.mockResolvedValue(undefined)
+    m.addEntry.mockResolvedValue({ ...entry, id: 2 })
+    m.updateEntry.mockResolvedValue({ ...entry, id: 2, status: 'bought' })
+    renderApp()
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Delete Sushi' }))
+    // Bought rows have their own "Undo" toggle, so scope to the toast.
+    await user.click(within(await screen.findByRole('status')).getByRole('button', { name: 'Undo' }))
+    await waitFor(() => expect(m.updateEntry).toHaveBeenCalledWith(2, { status: 'bought' }))
+  })
+
+  it('undoing a deleted parked item keeps its cooldown', async () => {
+    m.entries.mockResolvedValue([{ ...entry, status: 'tempted' as const, skippedAt: '2026-10-01', decideBy: '2026-10-11' }])
+    m.deleteEntry.mockResolvedValue(undefined)
+    m.addEntry.mockResolvedValue({ ...entry, id: 2 })
+    renderApp()
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Delete Sushi' }))
+    await user.click(await screen.findByRole('button', { name: 'Undo' }))
+    await waitFor(() =>
+      expect(m.addEntry).toHaveBeenCalledWith(expect.objectContaining({ status: 'tempted', cooldownDays: 10, skippedAt: '2026-10-01' })),
+    )
   })
 
   it('refetches entries when the category filter changes', async () => {

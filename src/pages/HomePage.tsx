@@ -13,7 +13,7 @@ export default function HomePage() {
   const [entries, setEntries] = useState<Entry[]>([])
   const [category, setCategory] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [undo, setUndo] = useState<{ goalId: number; message: string } | null>(null)
+  const [undo, setUndo] = useState<{ message: string; run: () => Promise<unknown> } | null>(null)
 
   const refresh = useCallback(async () => {
     try {
@@ -27,6 +27,27 @@ export default function HomePage() {
   }, [category])
 
   useEffect(() => { void refresh() }, [refresh])
+
+  const dayMs = 86_400_000
+  const days = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / dayMs)
+
+  // Deleting is a hard delete on the server, so Undo re-creates the entry (new id and createdAt).
+  const restoreEntry = async (e: Entry) => {
+    if (e.status === 'tempted') {
+      const cooldownDays = e.decideBy ? Math.min(90, Math.max(1, days(e.skippedAt, e.decideBy))) : undefined
+      await api.addEntry({ title: e.title, amountCents: e.amountCents, category: e.category, note: e.note, skippedAt: e.skippedAt, status: 'tempted', cooldownDays })
+      return
+    }
+    const created = await api.addEntry({ title: e.title, amountCents: e.amountCents, category: e.category, note: e.note, skippedAt: e.skippedAt })
+    if (e.status === 'bought') await api.updateEntry(created.id, { status: 'bought' })
+  }
+
+  const deleteEntry = async (id: number) => {
+    const e = entries.find((x) => x.id === id)
+    await api.deleteEntry(id)
+    await refresh()
+    if (e) setUndo({ message: `"${e.title}" deleted.`, run: () => restoreEntry(e) })
+  }
 
   const tempted = entries.filter((e) => e.status === 'tempted')
   const history = entries.filter((e) => e.status !== 'tempted')
@@ -61,12 +82,12 @@ export default function HomePage() {
           const g = summary?.goal
           await api.clearGoal()
           await refresh()
-          if (g) setUndo({ goalId: g.id, message: `Goal "${g.name}" removed.` })
+          if (g) setUndo({ message: `Goal "${g.name}" removed.`, run: () => api.restoreGoal(g.id) })
         }}
         onComplete={async () => {
           const done = await api.completeGoal()
           await refresh()
-          setUndo({ goalId: done.id, message: `Goal "${done.name}" completed.` })
+          setUndo({ message: `Goal "${done.name}" completed.`, run: () => api.restoreGoal(done.id) })
         }}
       />
       <EntryForm onSubmit={async (e) => { await api.addEntry(e); await refresh() }} />
@@ -75,7 +96,7 @@ export default function HomePage() {
         today={summary?.today}
         onEdit={async (e, patch) => { await api.updateEntry(e.id, patch); await refresh() }}
         onResolve={async (e, status) => { await api.updateEntry(e.id, { status }); await refresh() }}
-        onDelete={async (id) => { await api.deleteEntry(id); await refresh() }}
+        onDelete={deleteEntry}
       />
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">History</h2>
@@ -88,14 +109,14 @@ export default function HomePage() {
         entries={history}
         onEdit={async (e, patch) => { await api.updateEntry(e.id, patch); await refresh() }}
         onToggleStatus={async (e) => { await api.updateEntry(e.id, { status: e.status === 'skipped' ? 'bought' : 'skipped' }); await refresh() }}
-        onDelete={async (id) => { await api.deleteEntry(id); await refresh() }} />
+        onDelete={deleteEntry} />
       {undo && (
         <UndoToast
           message={undo.message}
           onDismiss={() => setUndo(null)}
           onUndo={async () => {
             try {
-              await api.restoreGoal(undo.goalId)
+              await undo.run()
               setUndo(null)
               await refresh()
             } catch (err) {
