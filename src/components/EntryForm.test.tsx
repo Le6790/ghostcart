@@ -29,7 +29,7 @@ describe('EntryForm', () => {
     const { onSubmit, user } = setup()
     await user.type(screen.getByPlaceholderText('What did you skip?'), 'Hat')
     await user.type(screen.getByPlaceholderText('Amount ($)'), '10')
-    await user.click(screen.getByRole('button'))
+    await user.click(screen.getByRole('button', { name: /didn't buy it/i }))
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ note: null }))
   })
 
@@ -41,7 +41,7 @@ describe('EntryForm', () => {
     const { onSubmit, user } = setup()
     if (title) await user.type(screen.getByPlaceholderText('What did you skip?'), title)
     if (amount) await user.type(screen.getByPlaceholderText('Amount ($)'), amount)
-    await user.click(screen.getByRole('button'))
+    await user.click(screen.getByRole('button', { name: /didn't buy it/i }))
     expect(screen.getByText(/enter a title and a valid amount/i)).toBeInTheDocument()
     expect(onSubmit).not.toHaveBeenCalled()
   })
@@ -50,8 +50,45 @@ describe('EntryForm', () => {
     const { user } = setup(vi.fn().mockRejectedValue(new Error('boom')))
     await user.type(screen.getByPlaceholderText('What did you skip?'), 'Sushi')
     await user.type(screen.getByPlaceholderText('Amount ($)'), '5')
-    await user.click(screen.getByRole('button'))
+    await user.click(screen.getByRole('button', { name: /didn't buy it/i }))
     expect(await screen.findByText('boom')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('What did you skip?')).toHaveValue('Sushi')
+  })
+})
+
+describe('EntryForm cooldown', () => {
+  it('parks the item as tempted with the chosen cooldown', async () => {
+    const { onSubmit, user } = setup()
+    await user.type(screen.getByPlaceholderText('What did you skip?'), 'Jacket')
+    await user.type(screen.getByPlaceholderText('Amount ($)'), '120')
+    const days = screen.getByLabelText('Cooldown days')
+    await user.clear(days)
+    await user.type(days, '14')
+    await user.click(screen.getByRole('button', { name: 'Park it for 14 days' }))
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Jacket', amountCents: 12000, status: 'tempted', cooldownDays: 14 }),
+    )
+  })
+
+  it('does not send status or cooldown for a normal skip', async () => {
+    const { onSubmit, user } = setup()
+    await user.type(screen.getByPlaceholderText('What did you skip?'), 'Hat')
+    await user.type(screen.getByPlaceholderText('Amount ($)'), '10')
+    await user.click(screen.getByRole('button', { name: /didn't buy it/i }))
+    const sent = onSubmit.mock.calls[0][0]
+    expect(sent).not.toHaveProperty('status')
+    expect(sent).not.toHaveProperty('cooldownDays')
+  })
+
+  it('rejects an out-of-range cooldown', async () => {
+    const { onSubmit, user } = setup()
+    await user.type(screen.getByPlaceholderText('What did you skip?'), 'Hat')
+    await user.type(screen.getByPlaceholderText('Amount ($)'), '10')
+    const days = screen.getByLabelText('Cooldown days')
+    await user.clear(days)
+    await user.type(days, '120')
+    await user.click(screen.getByRole('button', { name: /park it/i }))
+    expect(screen.getByText(/cooldown must be 1 to 90/i)).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
   })
 })

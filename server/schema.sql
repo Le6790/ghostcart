@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS entries (
   category     TEXT NOT NULL,
   note         TEXT,
   skipped_at   TEXT NOT NULL,
-  status       TEXT NOT NULL DEFAULT 'skipped' CHECK (status IN ('skipped', 'bought')),
+  status       TEXT NOT NULL DEFAULT 'skipped' CHECK (status IN ('tempted', 'skipped', 'bought')),
+  decide_by    TEXT,
   created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS entries_user_skipped ON entries(user_id, skipped_at);

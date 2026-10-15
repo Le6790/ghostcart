@@ -35,7 +35,7 @@ describe('openDb', () => {
     expect(db.prepare('SELECT COUNT(*) AS n FROM goals').get()).toEqual({ n: 0 })
   })
 
-  it('migrates a pre-status entries table, defaulting existing rows to skipped', () => {
+  it('migrates a pre-status, pre-cooldown entries table, keeping rows and defaulting them to skipped', () => {
     const dir = mkdtempSync(join(tmpdir(), 'ghostcart-'))
     const path = join(dir, 'old.db')
     try {
@@ -50,7 +50,23 @@ describe('openDb', () => {
       `)
       old.close()
       const db = openDb(path)
-      expect(db.prepare('SELECT status FROM entries').get()).toEqual({ status: 'skipped' })
+      expect(db.prepare('SELECT id, title, status, decide_by AS decideBy FROM entries').get()).toEqual({
+        id: 1,
+        title: 't',
+        status: 'skipped',
+        decideBy: null,
+      })
+      // the rebuilt table accepts 'tempted' and keeps its user index
+      expect(() =>
+        db
+          .prepare(
+            "INSERT INTO entries (user_id, title, amount_cents, category, skipped_at, status, decide_by) VALUES (1, 'w', 5, 'other', '2026-10-01', 'tempted', '2026-10-31')",
+          )
+          .run(),
+      ).not.toThrow()
+      expect(
+        db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'entries_user_skipped'").get(),
+      ).toBeTruthy()
       db.close()
       expect(() => openDb(path).close()).not.toThrow() // re-open is a no-op
     } finally {

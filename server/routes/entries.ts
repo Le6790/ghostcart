@@ -2,6 +2,8 @@ import { Hono } from 'hono'
 import { entryInputSchema, entryPatchSchema, type Entry } from '../../shared/schemas.ts'
 import type { AppEnv } from '../auth.ts'
 
+const DEFAULT_COOLDOWN_DAYS = 30
+
 interface Row {
   id: number
   title: string
@@ -10,6 +12,7 @@ interface Row {
   note: string | null
   skipped_at: string
   status: Entry['status']
+  decide_by: string | null
   created_at: string
 }
 
@@ -21,6 +24,7 @@ const toEntry = (r: Row): Entry => ({
   note: r.note,
   skippedAt: r.skipped_at,
   status: r.status,
+  decideBy: r.decide_by,
   createdAt: r.created_at,
 })
 
@@ -45,13 +49,25 @@ entries.post('/', async (c) => {
   const parsed = entryInputSchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return c.json({ error: parsed.error.flatten() }, 400)
   const e = parsed.data
+  const status = e.status ?? 'skipped'
   const row = c
     .get('db')
     .prepare(
-      `INSERT INTO entries (user_id, title, amount_cents, category, note, skipped_at)
-       VALUES (?, ?, ?, ?, ?, ?) RETURNING *`,
+      `INSERT INTO entries (user_id, title, amount_cents, category, note, skipped_at, status, decide_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'tempted' THEN date(?, '+' || ? || ' days') END) RETURNING *`,
     )
-    .get(c.get('user').id, e.title, e.amountCents, e.category, e.note ?? null, e.skippedAt) as Row
+    .get(
+      c.get('user').id,
+      e.title,
+      e.amountCents,
+      e.category,
+      e.note ?? null,
+      e.skippedAt,
+      status,
+      status,
+      e.skippedAt,
+      e.cooldownDays ?? DEFAULT_COOLDOWN_DAYS,
+    ) as Row
   return c.json(toEntry(row), 201)
 })
 
@@ -67,15 +83,26 @@ entries.patch('/:id', async (c) => {
     skipped_at: p.skippedAt,
     status: p.status,
   }
+  const db = c.get('db')
+  const id = Number(c.req.param('id'))
+  const userId = c.get('user').id
+  if (p.status !== undefined) {
+    // Resolving a tempted entry ends its cooldown and dates it today (unless the caller says otherwise),
+    // so it lands in the right month and goal window.
+    const cur = db.prepare('SELECT status FROM entries WHERE id = ? AND user_id = ?').get(id, userId) as
+      | { status: Entry['status'] }
+      | undefined
+    if (cur?.status === 'tempted' && p.skippedAt === undefined) cols.skipped_at = new Date().toISOString().slice(0, 10)
+    cols.decide_by = null
+  }
   const sets = Object.keys(cols).filter((k) => cols[k] !== undefined)
   if (sets.length === 0) return c.json({ error: 'No fields to update' }, 400)
-  const row = c
-    .get('db')
+  const row = db
     .prepare(
       `UPDATE entries SET ${sets.map((k) => `${k} = ?`).join(', ')}
        WHERE id = ? AND user_id = ? RETURNING *`,
     )
-    .get(...sets.map((k) => cols[k]), Number(c.req.param('id')), c.get('user').id) as Row | undefined
+    .get(...sets.map((k) => cols[k]), id, userId) as Row | undefined
   return row ? c.json(toEntry(row)) : c.json({ error: 'Not found' }, 404)
 })
 

@@ -12,7 +12,7 @@ export const CATEGORIES = [
 export const categorySchema = z.enum(CATEGORIES)
 export type Category = z.infer<typeof categorySchema>
 
-export const STATUSES = ['skipped', 'bought'] as const
+export const STATUSES = ['tempted', 'skipped', 'bought'] as const
 export const statusSchema = z.enum(STATUSES)
 export type Status = z.infer<typeof statusSchema>
 
@@ -24,10 +24,17 @@ export const entryInputSchema = z.object({
   category: categorySchema,
   note: z.string().trim().max(500).optional().nullable(),
   skippedAt: isoDate,
+  // Omit for a normal skip. 'tempted' parks the item until skippedAt + cooldownDays.
+  status: z.enum(['skipped', 'tempted']).optional(),
+  cooldownDays: z.number().int().min(1).max(90).optional(),
 })
 export type EntryInput = z.infer<typeof entryInputSchema>
 
-export const entryPatchSchema = entryInputSchema.partial().extend({ status: statusSchema.optional() })
+// Entries can be resolved (tempted -> skipped/bought) or toggled, but never moved back to tempted.
+export const entryPatchSchema = entryInputSchema
+  .omit({ cooldownDays: true })
+  .partial()
+  .extend({ status: z.enum(['skipped', 'bought']).optional() })
 
 export type EntryPatch = z.infer<typeof entryPatchSchema>
 
@@ -39,6 +46,7 @@ export interface Entry {
   note: string | null
   skippedAt: string
   status: Status
+  decideBy: string | null
   createdAt: string
 }
 
@@ -58,6 +66,8 @@ export interface Summary {
   totalCents: number
   monthCents: number
   count: number
+  /** Tempted items whose cooldown has ended. */
+  readyToDecide: number
   topCategory: { category: Category; cents: number } | null
   goal: (Goal & { savedCents: number; percent: number; reached: boolean }) | null
 }

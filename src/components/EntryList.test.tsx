@@ -13,6 +13,7 @@ const entry = (over: Partial<Entry> = {}): Entry => ({
   note: null,
   skippedAt: '2026-10-01',
   status: 'skipped',
+  decideBy: null,
   createdAt: '2026-10-01 12:00:00',
   ...over,
 })

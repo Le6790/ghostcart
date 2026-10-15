@@ -7,7 +7,8 @@ export const summary = new Hono<AppEnv>()
 summary.get('/', (c) => {
   const db = c.get('db')
   const { id } = c.get('user')
-  const monthStart = new Date().toISOString().slice(0, 7) + '-01'
+  const today = new Date().toISOString().slice(0, 10)
+  const monthStart = today.slice(0, 7) + '-01'
 
   const totals = db
     .prepare(
@@ -45,6 +46,13 @@ summary.get('/', (c) => {
     }
   }
 
-  const out: Summary = { ...totals, topCategory: top ?? null, goal: goalOut }
+  const { n: readyToDecide } = db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM entries
+       WHERE user_id = ? AND status = 'tempted' AND decide_by <= ?`,
+    )
+    .get(id, today) as { n: number }
+
+  const out: Summary = { ...totals, readyToDecide, topCategory: top ?? null, goal: goalOut }
   return c.json(out)
 })

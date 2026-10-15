@@ -42,3 +42,6 @@ coverage/
 *.sqlite3
 *.sqlite-shm
 *.sqlite-wal
+
+# Personal working notes (kept local, not committed)
+NOTES_*.md

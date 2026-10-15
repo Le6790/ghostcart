@@ -11,6 +11,7 @@ vi.mock('./api.ts', () => ({
     summary: vi.fn(),
     entries: vi.fn(),
     addEntry: vi.fn(),
+    updateEntry: vi.fn(),
     deleteEntry: vi.fn(),
     setGoal: vi.fn(),
     clearGoal: vi.fn(),
@@ -23,6 +24,7 @@ const summary = {
   totalCents: 12345,
   monthCents: 2000,
   count: 3,
+  readyToDecide: 0,
   topCategory: { category: 'dining' as const, cents: 9000 },
   goal: null,
 }
@@ -34,6 +36,7 @@ const entry = {
   note: null,
   skippedAt: '2026-10-01',
   status: 'skipped' as const,
+  decideBy: null,
   createdAt: '',
 }
 
@@ -96,5 +99,27 @@ describe('App', () => {
     await user.type(screen.getByPlaceholderText('Target ($)'), '500')
     await user.click(screen.getByRole('button', { name: 'Save goal' }))
     await waitFor(() => expect(m.setGoal).toHaveBeenCalledWith({ name: 'Trip', targetCents: 50000 }))
+  })
+
+  it('shows tempted items separately from history, with a ready-to-decide banner', async () => {
+    m.summary.mockResolvedValue({ ...summary, readyToDecide: 2 })
+    m.entries.mockResolvedValue([
+      entry,
+      { ...entry, id: 2, title: 'Jacket', status: 'tempted' as const, decideBy: '2020-01-01' },
+    ])
+    render(<App />)
+    expect(await screen.findByText('2 items are ready to decide.')).toBeInTheDocument()
+    expect(screen.getByText('Cooling off')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Skip Jacket' })).toBeInTheDocument()
+    // the tempted item is not duplicated in History (it has no "I bought it" toggle)
+    expect(screen.getAllByRole('button', { name: 'I bought it' })).toHaveLength(1)
+  })
+
+  it('resolves a tempted item through the API', async () => {
+    m.entries.mockResolvedValue([{ ...entry, id: 2, title: 'Jacket', status: 'tempted' as const, decideBy: '2999-01-01' }])
+    m.updateEntry.mockResolvedValue(entry)
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Skip Jacket' }))
+    expect(m.updateEntry).toHaveBeenCalledWith(2, { status: 'skipped' })
   })
 })

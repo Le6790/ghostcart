@@ -4,6 +4,7 @@ import { CATEGORIES, type Entry, type Me, type Summary } from '../shared/schemas
 import { api } from './api.ts'
 import { EntryForm } from './components/EntryForm.tsx'
 import { EntryList } from './components/EntryList.tsx'
+import { TemptedList } from './components/TemptedList.tsx'
 import { GoalCard } from './components/GoalCard.tsx'
 
 export default function App() {
@@ -26,6 +27,9 @@ export default function App() {
 
   useEffect(() => { api.me().then(setMe).catch(() => {}) }, [])
   useEffect(() => { void refresh() }, [refresh])
+
+  const tempted = entries.filter((e) => e.status === 'tempted')
+  const history = entries.filter((e) => e.status !== 'tempted')
 
   const stat = (label: string, value: string) => (
     <div className="rounded-lg bg-white p-4 shadow">
@@ -52,12 +56,22 @@ export default function App() {
           {stat('Top category', summary.topCategory?.category ?? '—')}
         </section>
       )}
+      {summary && summary.readyToDecide > 0 && (
+        <p className="rounded bg-amber-50 p-3 text-amber-800">
+          {summary.readyToDecide} {summary.readyToDecide === 1 ? 'item is' : 'items are'} ready to decide.
+        </p>
+      )}
       <GoalCard
         goal={summary?.goal ?? null}
         onSave={async (name, targetCents) => { await api.setGoal({ name, targetCents }); await refresh() }}
         onClear={async () => { await api.clearGoal(); await refresh() }}
       />
       <EntryForm onSubmit={async (e) => { await api.addEntry(e); await refresh() }} />
+      <TemptedList
+        entries={tempted}
+        onResolve={async (e, status) => { await api.updateEntry(e.id, { status }); await refresh() }}
+        onDelete={async (id) => { await api.deleteEntry(id); await refresh() }}
+      />
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">History</h2>
         <select className="rounded border border-slate-300 px-2 py-1 text-sm" value={category} onChange={(e) => setCategory(e.target.value)}>
@@ -66,7 +80,7 @@ export default function App() {
         </select>
       </div>
       <EntryList
-        entries={entries}
+        entries={history}
         onToggleStatus={async (e) => { await api.updateEntry(e.id, { status: e.status === 'skipped' ? 'bought' : 'skipped' }); await refresh() }}
         onDelete={async (id) => { await api.deleteEntry(id); await refresh() }} />
     </div>

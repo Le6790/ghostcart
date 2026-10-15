@@ -28,6 +28,7 @@ describe('/summary', () => {
       totalCents: 0,
       monthCents: 0,
       count: 0,
+      readyToDecide: 0,
       topCategory: null,
       goal: null,
     })
@@ -58,6 +59,19 @@ describe('/summary', () => {
     const s = await summary('a@x')
     expect(s).toMatchObject({ totalCents: 300, count: 1, topCategory: { category: 'dining', cents: 300 } })
     expect(s.goal.savedCents).toBe(300)
+  })
+
+  it('ignores tempted entries in savings and counts those whose cooldown ended as ready to decide', async () => {
+    const park = (title: string, skippedAt: string, cooldownDays: number) =>
+      app.request('/api/entries', {
+        method: 'POST',
+        headers: h('a@x'),
+        body: JSON.stringify({ title, amountCents: 5000, category: 'shopping', skippedAt, status: 'tempted', cooldownDays }),
+      })
+    await park('old want', '2020-01-01', 30) // decide_by 2020-01-31: ready
+    await park('new want', new Date().toISOString().slice(0, 10), 30) // not ready
+    const s = await summary('a@x')
+    expect(s).toMatchObject({ totalCents: 0, count: 0, topCategory: null, readyToDecide: 1 })
   })
 
   it('picks the top category by total, not by count', async () => {
