@@ -31,7 +31,11 @@ describe('POST /entries', () => {
 
   it('rejects invalid body and malformed JSON', async () => {
     expect((await call('', 'POST', { ...base, category: 'nope' })).status).toBe(400)
-    const bad = await app.request('/api/entries', { method: 'POST', body: '{not json' })
+    const bad = await app.request('/api/entries', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{not json',
+    })
     expect(bad.status).toBe(400)
   })
 })
