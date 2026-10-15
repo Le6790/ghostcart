@@ -37,7 +37,10 @@ export default function App() {
   return (
     <div className="mx-auto min-h-screen max-w-3xl space-y-4 bg-slate-50 p-4">
       <header className="flex items-baseline justify-between">
-        <h1 className="text-2xl font-bold">Ghost Cart</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <img src="/ghostcart-logo.png" alt="" className="h-20 w-20 rounded-2xl" />
+          Ghost Cart
+        </h1>
         {me && <span className="text-sm text-slate-500">{me.name}</span>}
       </header>
       {error && <p className="rounded bg-red-50 p-3 text-red-700">{error}</p>}
