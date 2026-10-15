@@ -72,6 +72,15 @@ export interface Summary {
   goal: (Goal & { savedCents: number; percent: number; reached: boolean }) | null
 }
 
+export const TREND_PERIODS = ['month', 'week'] as const
+export type TrendPeriod = (typeof TREND_PERIODS)[number]
+
+/** One bucket of the trend chart. `start` is the first day: the 1st of the month, or the Monday of the week. */
+export interface TrendPoint {
+  start: string
+  totalCents: number
+}
+
 export interface Me {
   login: string
   name: string

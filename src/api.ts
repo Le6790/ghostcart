@@ -1,4 +1,4 @@
-import type { Entry, EntryInput, EntryPatch, Goal, GoalInput, Me, Summary } from '../shared/schemas.ts'
+import type { Entry, EntryInput, EntryPatch, Goal, GoalInput, Me, Summary, TrendPeriod, TrendPoint } from '../shared/schemas.ts'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
@@ -14,6 +14,7 @@ const body = (method: string, data: unknown): RequestInit => ({ method, body: JS
 export const api = {
   me: () => request<Me>('/me'),
   summary: () => request<Summary>('/summary'),
+  trend: (period: TrendPeriod) => request<TrendPoint[]>(`/trend?period=${period}`),
   entries: (q: { category?: string; from?: string; to?: string } = {}) => {
     const qs = new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][])
     return request<Entry[]>(`/entries${qs.size ? `?${qs}` : ''}`)

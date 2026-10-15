@@ -9,6 +9,7 @@ vi.mock('./api.ts', () => ({
   api: {
     me: vi.fn(),
     summary: vi.fn(),
+    trend: vi.fn(),
     entries: vi.fn(),
     addEntry: vi.fn(),
     updateEntry: vi.fn(),
@@ -45,6 +46,7 @@ beforeEach(() => {
   m.me.mockResolvedValue({ login: 'a@x', name: 'Alice' })
   m.summary.mockResolvedValue(summary)
   m.entries.mockResolvedValue([entry])
+  m.trend.mockResolvedValue([])
 })
 
 describe('App', () => {
@@ -121,5 +123,14 @@ describe('App', () => {
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Skip Jacket' }))
     expect(m.updateEntry).toHaveBeenCalledWith(2, { status: 'skipped' })
+  })
+
+  it('loads the trend and refetches it when the period changes', async () => {
+    m.trend.mockResolvedValue([{ start: '2026-10-01', totalCents: 4500 }])
+    render(<App />)
+    await screen.findByText('Last 1 months')
+    expect(m.trend).toHaveBeenLastCalledWith('month')
+    await userEvent.click(screen.getByRole('button', { name: 'Weekly' }))
+    await waitFor(() => expect(m.trend).toHaveBeenLastCalledWith('week'))
   })
 })

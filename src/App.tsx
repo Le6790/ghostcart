@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { formatCents } from '../shared/money.ts'
-import { CATEGORIES, type Entry, type Me, type Summary } from '../shared/schemas.ts'
+import { CATEGORIES, type Entry, type Me, type Summary, type TrendPeriod, type TrendPoint } from '../shared/schemas.ts'
 import { api } from './api.ts'
 import { EntryForm } from './components/EntryForm.tsx'
 import { EntryList } from './components/EntryList.tsx'
+import { TrendChart } from './components/TrendChart.tsx'
 import { TemptedList } from './components/TemptedList.tsx'
 import { GoalCard } from './components/GoalCard.tsx'
 
@@ -12,18 +13,21 @@ export default function App() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [entries, setEntries] = useState<Entry[]>([])
   const [category, setCategory] = useState('')
+  const [period, setPeriod] = useState<TrendPeriod>('month')
+  const [trend, setTrend] = useState<TrendPoint[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     try {
-      const [s, e] = await Promise.all([api.summary(), api.entries({ category })])
+      const [s, e, t] = await Promise.all([api.summary(), api.entries({ category }), api.trend(period)])
       setSummary(s)
       setEntries(e)
+      setTrend(t)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load')
     }
-  }, [category])
+  }, [category, period])
 
   useEffect(() => { api.me().then(setMe).catch(() => {}) }, [])
   useEffect(() => { void refresh() }, [refresh])
@@ -66,6 +70,7 @@ export default function App() {
         onSave={async (name, targetCents) => { await api.setGoal({ name, targetCents }); await refresh() }}
         onClear={async () => { await api.clearGoal(); await refresh() }}
       />
+      <TrendChart points={trend} period={period} onPeriodChange={setPeriod} />
       <EntryForm onSubmit={async (e) => { await api.addEntry(e); await refresh() }} />
       <TemptedList
         entries={tempted}

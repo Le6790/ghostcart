@@ -5,6 +5,7 @@ import type { DB } from './db.ts'
 import { entries } from './routes/entries.ts'
 import { goal } from './routes/goal.ts'
 import { summary } from './routes/summary.ts'
+import { trend } from './routes/trend.ts'
 
 export function createApp(db: DB, devUser?: string) {
   const app = new Hono<AppEnv>()
@@ -18,6 +19,7 @@ export function createApp(db: DB, devUser?: string) {
   api.route('/entries', entries)
   api.route('/goal', goal)
   api.route('/summary', summary)
+  api.route('/trend', trend)
   app.route('/api', api)
   return app
 }
