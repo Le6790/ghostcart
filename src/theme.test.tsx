@@ -76,4 +76,14 @@ describe('useTheme', () => {
     expect(document.documentElement).toHaveClass('dark')
     vi.restoreAllMocks()
   })
+
+  it('keeps the theme-color meta in step', () => {
+    document.head.insertAdjacentHTML('beforeend', '<meta name="theme-color" content="#f8fafc">')
+    const meta = document.querySelector('meta[name="theme-color"]')!
+    const { result } = renderHook(() => useTheme())
+    expect(meta).toHaveAttribute('content', '#f8fafc')
+    act(() => result.current[1]())
+    expect(meta).toHaveAttribute('content', '#020617')
+    meta.remove()
+  })
 })

@@ -17,6 +17,10 @@ vi.mock('./api.ts', () => ({
     deleteEntry: vi.fn(),
     setGoal: vi.fn(),
     clearGoal: vi.fn(),
+    goal: vi.fn().mockResolvedValue(null),
+    goalHistory: vi.fn().mockResolvedValue([]),
+    completeGoal: vi.fn(),
+    restoreGoal: vi.fn(),
   },
 }))
 
@@ -32,6 +36,7 @@ const summary = {
   totalCents: 12345,
   monthCents: 2000,
   count: 3,
+  today: '2026-10-14',
   readyToDecide: 0,
   topCategory: { category: 'dining' as const, cents: 9000 },
   goal: null,
@@ -54,6 +59,8 @@ beforeEach(() => {
   m.summary.mockResolvedValue(summary)
   m.entries.mockResolvedValue([entry])
   m.trend.mockResolvedValue([])
+  m.goal.mockResolvedValue(null)
+  m.goalHistory.mockResolvedValue([])
 })
 
 describe('App', () => {
@@ -100,7 +107,7 @@ describe('App', () => {
   })
 
   it('sets a goal', async () => {
-    m.setGoal.mockResolvedValue({ name: 'Trip', targetCents: 50000, startedAt: '2026-10-14' })
+    m.setGoal.mockResolvedValue({ id: 1, name: 'Trip', targetCents: 50000, startedAt: '2026-10-14' })
     renderApp()
     await screen.findByText('Sushi')
     const user = userEvent.setup()
@@ -162,5 +169,53 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Menu' }))
     await user.click(screen.getByRole('link', { name: 'Home' }))
     expect(await screen.findByText('Sushi')).toBeInTheDocument()
+  })
+
+  const withGoal = (over = {}) => ({
+    ...summary,
+    goal: { id: 7, name: 'Trip', targetCents: 10000, startedAt: '2026-10-01', savedCents: 2500, percent: 25, reached: false, ...over },
+  })
+
+  it('offers Undo after removing a goal and restores it', async () => {
+    m.summary.mockResolvedValue(withGoal())
+    m.clearGoal.mockResolvedValue(undefined)
+    m.restoreGoal.mockResolvedValue({ id: 7, name: 'Trip', targetCents: 10000, startedAt: '2026-10-01' })
+    renderApp()
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Remove' }))
+    expect(await screen.findByText('Goal "Trip" removed.')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(m.restoreGoal).toHaveBeenCalledWith(7)
+    await waitFor(() => expect(screen.queryByText('Goal "Trip" removed.')).not.toBeInTheDocument())
+  })
+
+  it('completes a reached goal and offers Undo', async () => {
+    m.summary.mockResolvedValue(withGoal({ savedCents: 10000, percent: 100, reached: true }))
+    m.completeGoal.mockResolvedValue({ id: 7, name: 'Trip', targetCents: 10000, startedAt: '2026-10-01', status: 'completed', endedAt: '2026-10-14', savedCents: 10000, percent: 100 })
+    renderApp()
+    await userEvent.click(await screen.findByRole('button', { name: 'Mark complete' }))
+    expect(m.completeGoal).toHaveBeenCalled()
+    expect(await screen.findByText('Goal "Trip" completed.')).toBeInTheDocument()
+  })
+
+  it('shows the goals history page from the menu', async () => {
+    renderApp('/goals')
+    expect(await screen.findByRole('heading', { name: 'Goals' })).toBeInTheDocument()
+  })
+
+  it('edits a history entry through the API then refreshes', async () => {
+    m.updateEntry.mockResolvedValue(entry)
+    renderApp()
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Edit Sushi' }))
+    const title = screen.getByLabelText('Title')
+    await user.clear(title)
+    await user.type(title, 'Ramen')
+    const before = m.summary.mock.calls.length
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() =>
+      expect(m.updateEntry).toHaveBeenCalledWith(1, expect.objectContaining({ title: 'Ramen', amountCents: 4500 })),
+    )
+    await waitFor(() => expect(m.summary.mock.calls.length).toBeGreaterThan(before))
   })
 })

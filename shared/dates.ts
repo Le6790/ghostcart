@@ -1,0 +1,5 @@
+/** The user's local calendar date as YYYY-MM-DD (not UTC, which rolls over mid-evening in the Americas). */
+export function localToday(d = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}

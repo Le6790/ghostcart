@@ -22,6 +22,10 @@ export function useTheme(): [Theme, () => void] {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
+    // Keep the browser/status-bar tint in step with the page (slate-950 / slate-50).
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', theme === 'dark' ? '#020617' : '#f8fafc')
   }, [theme])
 
   const toggle = useCallback(() => {

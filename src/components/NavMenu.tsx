@@ -5,6 +5,7 @@ import { useTheme } from '../theme.ts'
 const ITEMS = [
   { to: '/', label: 'Home', end: true },
   { to: '/trends', label: 'Trends', end: false },
+  { to: '/goals', label: 'Goals', end: false },
 ]
 
 export function NavMenu({ onRefresh = () => window.location.reload() }: { onRefresh?: () => void }) {

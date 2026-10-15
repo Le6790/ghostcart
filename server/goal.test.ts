@@ -33,7 +33,7 @@ describe('/goal', () => {
     await call('a@x', 'PUT', { name: 'Trip', targetCents: 50000 })
     db.prepare("UPDATE goals SET started_at = '2026-01-01'").run()
     const g = await json(await call('a@x', 'PUT', { name: 'Car', targetCents: 90000 }))
-    expect(g).toEqual({ name: 'Car', targetCents: 90000, startedAt: '2026-01-01' })
+    expect(g).toEqual({ id: expect.any(Number), name: 'Car', targetCents: 90000, startedAt: '2026-01-01' })
     expect(db.prepare('SELECT COUNT(*) AS n FROM goals').get()).toEqual({ n: 1 })
   })
 

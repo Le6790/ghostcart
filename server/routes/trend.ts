@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 import { TREND_PERIODS, type TrendPeriod, type TrendPoint } from '../../shared/schemas.ts'
 import type { AppEnv } from '../auth.ts'
+import { today } from '../dates.ts'
 
 export const trend = new Hono<AppEnv>()
 
@@ -45,7 +46,7 @@ trend.get('/', (c) => {
   const count = parsed.data.count ?? DEFAULT_COUNT[period]
   if (count > MAX_COUNT[period]) return c.json({ error: `count must be at most ${MAX_COUNT[period]}` }, 400)
 
-  const starts = bucketStarts(period, count, new Date().toISOString().slice(0, 10))
+  const starts = bucketStarts(period, count, today())
   const rows = c
     .get('db')
     .prepare(

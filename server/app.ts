@@ -4,6 +4,7 @@ import { csrfGuard } from './csrf.ts'
 import type { DB } from './db.ts'
 import { entries } from './routes/entries.ts'
 import { goal } from './routes/goal.ts'
+import { goals } from './routes/goals.ts'
 import { summary } from './routes/summary.ts'
 import { trend } from './routes/trend.ts'
 
@@ -18,6 +19,7 @@ export function createApp(db: DB, devUser?: string) {
   })
   api.route('/entries', entries)
   api.route('/goal', goal)
+  api.route('/goals', goals)
   api.route('/summary', summary)
   api.route('/trend', trend)
   app.route('/api', api)

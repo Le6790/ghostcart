@@ -50,4 +50,31 @@ describe('EntryList', () => {
     render(<EntryList entries={[entry({ status: 'bought' })]} onDelete={() => {}} onToggleStatus={() => {}} />)
     expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument()
   })
+
+  it('opens an inline editor, saves a patch, and closes', async () => {
+    const onEdit = vi.fn().mockResolvedValue(undefined)
+    const e = entry({ id: 5 })
+    render(<EntryList entries={[e]} onDelete={() => {}} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Edit Sushi' }))
+    const title = screen.getByLabelText('Title')
+    await userEvent.clear(title)
+    await userEvent.type(title, 'Ramen')
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(onEdit).toHaveBeenCalledWith(e, expect.objectContaining({ title: 'Ramen', amountCents: 4550 }))
+    expect(screen.queryByLabelText('Title')).not.toBeInTheDocument()
+  })
+
+  it('can cancel an edit without calling onEdit', async () => {
+    const onEdit = vi.fn()
+    render(<EntryList entries={[entry()]} onDelete={() => {}} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Edit Sushi' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(onEdit).not.toHaveBeenCalled()
+    expect(screen.getByText('Sushi')).toBeInTheDocument()
+  })
+
+  it('has no Edit button when onEdit is not provided', () => {
+    render(<EntryList entries={[entry()]} onDelete={() => {}} />)
+    expect(screen.queryByRole('button', { name: 'Edit Sushi' })).not.toBeInTheDocument()
+  })
 })

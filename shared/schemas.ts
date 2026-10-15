@@ -57,15 +57,26 @@ export const goalInputSchema = z.object({
 export type GoalInput = z.infer<typeof goalInputSchema>
 
 export interface Goal {
+  id: number
   name: string
   targetCents: number
   startedAt: string
+}
+
+/** A goal that is no longer active. `savedCents` is the snapshot taken when it ended. */
+export interface GoalHistoryItem extends Goal {
+  status: 'completed' | 'removed'
+  endedAt: string
+  savedCents: number
+  percent: number
 }
 
 export interface Summary {
   totalCents: number
   monthCents: number
   count: number
+  /** The server's current date (YYYY-MM-DD) in its configured timezone. */
+  today: string
   /** Tempted items whose cooldown has ended. */
   readyToDecide: number
   topCategory: { category: Category; cents: number } | null

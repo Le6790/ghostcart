@@ -46,4 +46,23 @@ describe('TemptedList', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Delete Jacket' }))
     expect(onDelete).toHaveBeenCalledWith(1)
   })
+
+  it('uses the supplied today so "ready" agrees with the server', () => {
+    render(<TemptedList entries={[entry({ decideBy: '2026-10-14' })]} today="2026-10-14" onResolve={() => {}} onDelete={() => {}} />)
+    expect(screen.getByText(/Ready to decide/)).toBeInTheDocument()
+    render(<TemptedList entries={[entry({ id: 2, decideBy: '2026-10-14' })]} today="2026-10-13" onResolve={() => {}} onDelete={() => {}} />)
+    expect(screen.getByText(/Decide by 2026-10-14/)).toBeInTheDocument()
+  })
+
+  it('edits a parked item inline', async () => {
+    const onEdit = vi.fn().mockResolvedValue(undefined)
+    const e = entry()
+    render(<TemptedList entries={[e]} onResolve={() => {}} onDelete={() => {}} onEdit={onEdit} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Edit Jacket' }))
+    const amount = screen.getByLabelText('Amount')
+    await userEvent.clear(amount)
+    await userEvent.type(amount, '99')
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(onEdit).toHaveBeenCalledWith(e, expect.objectContaining({ amountCents: 9900 }))
+  })
 })

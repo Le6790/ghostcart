@@ -4,6 +4,7 @@ import type { Me } from '../shared/schemas.ts'
 import { api } from './api.ts'
 import { NavMenu } from './components/NavMenu.tsx'
 import HomePage from './pages/HomePage.tsx'
+import GoalsPage from './pages/GoalsPage.tsx'
 import TrendsPage from './pages/TrendsPage.tsx'
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/trends" element={<TrendsPage />} />
+        <Route path="/goals" element={<GoalsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

@@ -6,9 +6,11 @@ interface Props {
   goal: Summary['goal']
   onSave: (name: string, targetCents: number) => Promise<void>
   onClear: () => Promise<void>
+  /** Archive a reached goal. The button only appears once the goal is reached. */
+  onComplete?: () => Promise<void>
 }
 
-export function GoalCard({ goal, onSave, onClear }: Props) {
+export function GoalCard({ goal, onSave, onClear, onComplete }: Props) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState('')
   const [target, setTarget] = useState('')
@@ -47,6 +49,11 @@ export function GoalCard({ goal, onSave, onClear }: Props) {
         <div className="h-full bg-emerald-500" style={{ width: `${goal.percent}%` }} />
       </div>
       <p className="mt-2 text-sm">{goal.reached ? '🎉 Goal reached!' : `${goal.percent}% there`}</p>
+      {goal.reached && onComplete && (
+        <button className="mt-3 rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700" onClick={onComplete}>
+          Mark complete
+        </button>
+      )}
       <div className="mt-3 flex gap-3 text-sm">
         <button className="text-slate-600 dark:text-slate-300 underline" onClick={() => { setName(goal.name); setTarget(String(goal.targetCents / 100)); setEditing(true) }}>Edit</button>
         <button className="text-slate-600 dark:text-slate-300 underline" onClick={onClear}>Remove</button>

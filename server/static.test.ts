@@ -14,6 +14,7 @@ beforeAll(() => {
   mkdirSync(join(dir, 'assets'))
   writeFileSync(join(dir, 'index.html'), '<!doctype html><title>Ghost Cart</title>')
   writeFileSync(join(dir, 'assets', 'app-abc123.js'), 'console.log(1)')
+  writeFileSync(join(dir, 'manifest.webmanifest'), '{"name":"Ghost Cart"}')
   app = createApp(openDb(':memory:'))
   serveFrontend(app, dir)
 })
@@ -32,6 +33,13 @@ describe('serveFrontend', () => {
     expect(res.status).toBe(200)
     expect(await res.text()).toBe('console.log(1)')
     expect(res.headers.get('cache-control')).toBeNull()
+  })
+
+  it('serves the web app manifest as JSON, not the SPA fallback', async () => {
+    const res = await app.request('/manifest.webmanifest')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toMatch(/json/)
+    expect(await res.json()).toEqual({ name: 'Ghost Cart' })
   })
 
   it('does not shadow the API', async () => {

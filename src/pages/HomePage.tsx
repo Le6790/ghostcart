@@ -5,6 +5,7 @@ import { api } from '../api.ts'
 import { EntryForm } from '../components/EntryForm.tsx'
 import { EntryList } from '../components/EntryList.tsx'
 import { TemptedList } from '../components/TemptedList.tsx'
+import { UndoToast } from '../components/UndoToast.tsx'
 import { GoalCard } from '../components/GoalCard.tsx'
 
 export default function HomePage() {
@@ -12,6 +13,7 @@ export default function HomePage() {
   const [entries, setEntries] = useState<Entry[]>([])
   const [category, setCategory] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [undo, setUndo] = useState<{ goalId: number; message: string } | null>(null)
 
   const refresh = useCallback(async () => {
     try {
@@ -55,11 +57,23 @@ export default function HomePage() {
       <GoalCard
         goal={summary?.goal ?? null}
         onSave={async (name, targetCents) => { await api.setGoal({ name, targetCents }); await refresh() }}
-        onClear={async () => { await api.clearGoal(); await refresh() }}
+        onClear={async () => {
+          const g = summary?.goal
+          await api.clearGoal()
+          await refresh()
+          if (g) setUndo({ goalId: g.id, message: `Goal "${g.name}" removed.` })
+        }}
+        onComplete={async () => {
+          const done = await api.completeGoal()
+          await refresh()
+          setUndo({ goalId: done.id, message: `Goal "${done.name}" completed.` })
+        }}
       />
       <EntryForm onSubmit={async (e) => { await api.addEntry(e); await refresh() }} />
       <TemptedList
         entries={tempted}
+        today={summary?.today}
+        onEdit={async (e, patch) => { await api.updateEntry(e.id, patch); await refresh() }}
         onResolve={async (e, status) => { await api.updateEntry(e.id, { status }); await refresh() }}
         onDelete={async (id) => { await api.deleteEntry(id); await refresh() }}
       />
@@ -72,8 +86,25 @@ export default function HomePage() {
       </div>
       <EntryList
         entries={history}
+        onEdit={async (e, patch) => { await api.updateEntry(e.id, patch); await refresh() }}
         onToggleStatus={async (e) => { await api.updateEntry(e.id, { status: e.status === 'skipped' ? 'bought' : 'skipped' }); await refresh() }}
         onDelete={async (id) => { await api.deleteEntry(id); await refresh() }} />
+      {undo && (
+        <UndoToast
+          message={undo.message}
+          onDismiss={() => setUndo(null)}
+          onUndo={async () => {
+            try {
+              await api.restoreGoal(undo.goalId)
+              setUndo(null)
+              await refresh()
+            } catch (err) {
+              setUndo(null)
+              setError(err instanceof Error ? err.message : 'Could not undo')
+            }
+          }}
+        />
+      )}
     </div>
   )
 }

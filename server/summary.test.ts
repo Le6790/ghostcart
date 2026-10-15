@@ -28,6 +28,7 @@ describe('/summary', () => {
       totalCents: 0,
       monthCents: 0,
       count: 0,
+      today: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       readyToDecide: 0,
       topCategory: null,
       goal: null,

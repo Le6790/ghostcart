@@ -22,8 +22,14 @@ PORT=3000 DB_PATH=$HOME/ghost-cart/ghostcart.db npm start   # listens on 127.0.0
 tailscale serve --bg 3000                                 # HTTPS on your tailnet
 ```
 
+Set `APP_TIMEZONE` (an IANA name, e.g. `America/Los_Angeles`) so "today", month and week boundaries match where you live. It falls back to `TZ`, then the machine's zone, and the server refuses to start on an invalid name. The startup log prints the zone in use.
+
 Identity comes from the `Tailscale-User-Login` header that `tailscale serve` adds, so each tailnet user gets their own data automatically.
 The server binds to loopback only; do not expose it any other way (and do not use `tailscale funnel`), or the header could be spoofed.
+
+## Install on a phone (PWA)
+
+The app ships a web app manifest and icons. On iOS: open the tailnet URL in Safari, Share, **Add to Home Screen**. It then opens full screen without Safari's bar. There is deliberately no service worker, so it needs the network and always loads the latest build; use **Refresh** in the menu to reload. If you installed it before the manifest existed, remove the icon and add it again to pick up the name and icon.
 
 ## Stop it
 

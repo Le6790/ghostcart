@@ -6,6 +6,7 @@ import type { Summary } from '../../shared/schemas.ts'
 import { GoalCard } from './GoalCard.tsx'
 
 const goal = (over: Partial<NonNullable<Summary['goal']>> = {}): NonNullable<Summary['goal']> => ({
+  id: 1,
   name: 'Trip',
   targetCents: 100000,
   startedAt: '2026-10-01',
@@ -67,5 +68,14 @@ describe('GoalCard', () => {
     render(<GoalCard goal={goal()} onSave={noop} onClear={onClear} />)
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }))
     expect(onClear).toHaveBeenCalled()
+  })
+
+  it('offers Mark complete only once the goal is reached', async () => {
+    const onComplete = vi.fn().mockResolvedValue(undefined)
+    const { rerender } = render(<GoalCard goal={goal()} onSave={noop} onClear={noop} onComplete={onComplete} />)
+    expect(screen.queryByRole('button', { name: 'Mark complete' })).not.toBeInTheDocument()
+    rerender(<GoalCard goal={goal({ percent: 100, reached: true, savedCents: 100000 })} onSave={noop} onClear={noop} onComplete={onComplete} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Mark complete' }))
+    expect(onComplete).toHaveBeenCalled()
   })
 })

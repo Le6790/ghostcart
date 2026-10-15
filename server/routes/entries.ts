@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { entryInputSchema, entryPatchSchema, type Entry } from '../../shared/schemas.ts'
 import type { AppEnv } from '../auth.ts'
+import { today } from '../dates.ts'
 
 const DEFAULT_COOLDOWN_DAYS = 30
 
@@ -92,7 +93,7 @@ entries.patch('/:id', async (c) => {
     const cur = db.prepare('SELECT status FROM entries WHERE id = ? AND user_id = ?').get(id, userId) as
       | { status: Entry['status'] }
       | undefined
-    if (cur?.status === 'tempted' && p.skippedAt === undefined) cols.skipped_at = new Date().toISOString().slice(0, 10)
+    if (cur?.status === 'tempted' && p.skippedAt === undefined) cols.skipped_at = today()
     cols.decide_by = null
   }
   const sets = Object.keys(cols).filter((k) => cols[k] !== undefined)

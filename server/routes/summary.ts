@@ -1,14 +1,16 @@
 import { Hono } from 'hono'
-import type { Category, Goal, Summary } from '../../shared/schemas.ts'
+import type { Category, Summary } from '../../shared/schemas.ts'
 import type { AppEnv } from '../auth.ts'
+import { today } from '../dates.ts'
+import { activeGoal, liveProgress, toGoal } from '../goals.ts'
 
 export const summary = new Hono<AppEnv>()
 
 summary.get('/', (c) => {
   const db = c.get('db')
   const { id } = c.get('user')
-  const today = new Date().toISOString().slice(0, 10)
-  const monthStart = today.slice(0, 7) + '-01'
+  const now = today()
+  const monthStart = now.slice(0, 7) + '-01'
 
   const totals = db
     .prepare(
@@ -26,33 +28,16 @@ summary.get('/', (c) => {
     )
     .get(id) as { category: Category; cents: number } | undefined
 
-  const g = db
-    .prepare('SELECT name, target_cents AS targetCents, started_at AS startedAt FROM goals WHERE user_id = ?')
-    .get(id) as Goal | undefined
-
-  let goalOut: Summary['goal'] = null
-  if (g) {
-    const { s } = db
-      .prepare(
-        `SELECT COALESCE(SUM(amount_cents), 0) AS s FROM entries
-         WHERE user_id = ? AND status = 'skipped' AND skipped_at >= ?`,
-      )
-      .get(id, g.startedAt) as { s: number }
-    goalOut = {
-      ...g,
-      savedCents: s,
-      percent: Math.min(100, Math.round((s / g.targetCents) * 100)),
-      reached: s >= g.targetCents,
-    }
-  }
+  const g = activeGoal(db, id)
+  const goalOut: Summary['goal'] = g ? { ...toGoal(g), ...liveProgress(db, id, g) } : null
 
   const { n: readyToDecide } = db
     .prepare(
       `SELECT COUNT(*) AS n FROM entries
        WHERE user_id = ? AND status = 'tempted' AND decide_by <= ?`,
     )
-    .get(id, today) as { n: number }
+    .get(id, now) as { n: number }
 
-  const out: Summary = { ...totals, readyToDecide, topCategory: top ?? null, goal: goalOut }
+  const out: Summary = { ...totals, today: now, readyToDecide, topCategory: top ?? null, goal: goalOut }
   return c.json(out)
 })

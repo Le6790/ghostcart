@@ -73,4 +73,34 @@ describe('openDb', () => {
       rmSync(dir, { recursive: true, force: true })
     }
   })
+
+  it('migrates the old one-goal-per-user table: the row becomes the active goal', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ghostcart-'))
+    const path = join(dir, 'old-goals.db')
+    try {
+      const old = new Database(path)
+      old.exec(`
+        CREATE TABLE users (id INTEGER PRIMARY KEY, login TEXT NOT NULL UNIQUE, name TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT (datetime('now')));
+        CREATE TABLE goals (user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, name TEXT NOT NULL,
+          target_cents INTEGER NOT NULL CHECK (target_cents > 0), started_at TEXT NOT NULL);
+        INSERT INTO users (login, name) VALUES ('a', 'a');
+        INSERT INTO goals VALUES (1, 'Trip', 50000, '2026-10-01');
+      `)
+      old.close()
+      const db = openDb(path)
+      expect(db.prepare('SELECT user_id, name, target_cents, started_at, status, offset_cents FROM goals').all()).toEqual([
+        { user_id: 1, name: 'Trip', target_cents: 50000, started_at: '2026-10-01', status: 'active', offset_cents: 0 },
+      ])
+      // only one active goal per user, but any number of ended ones
+      const add = (status: string) =>
+        db.prepare(`INSERT INTO goals (user_id, name, target_cents, started_at, status) VALUES (1, 'g', 5, '2026-10-02', ?)`).run(status)
+      expect(() => add('active')).toThrow()
+      expect(() => add('completed')).not.toThrow()
+      expect(() => add('removed')).not.toThrow()
+      db.close()
+      expect(() => openDb(path).close()).not.toThrow()
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
+  })
 })

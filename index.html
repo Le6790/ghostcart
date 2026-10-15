@@ -5,13 +5,23 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ghost Cart</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#f8fafc" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Ghost Cart" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <script>
       // Apply the saved (or system) theme before first paint to avoid a white flash.
       // Keep in sync with resolveTheme() in src/theme.ts.
       try {
         var t = localStorage.getItem('theme')
         var dark = t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
-        if (dark) document.documentElement.classList.add('dark')
+        if (dark) {
+          document.documentElement.classList.add('dark')
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#020617')
+        }
       } catch (e) {}
     </script>
   </head>

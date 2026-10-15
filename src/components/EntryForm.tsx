@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
+import { localToday } from '../../shared/dates.ts'
 import { parseDollarsToCents } from '../../shared/money.ts'
 import { CATEGORIES, type Category, type EntryInput } from '../../shared/schemas.ts'
 
-const today = () => new Date().toISOString().slice(0, 10)
 
 export function EntryForm({ onSubmit }: { onSubmit: (e: EntryInput) => Promise<void> }) {
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<Category>('dining')
-  const [skippedAt, setSkippedAt] = useState(today())
+  const [skippedAt, setSkippedAt] = useState(localToday())
   const [note, setNote] = useState('')
   const [cooldown, setCooldown] = useState('30')
   const [error, setError] = useState<string | null>(null)
