@@ -60,7 +60,7 @@ export function EntryForm({ onSubmit }: { onSubmit: (e: EntryInput) => Promise<v
     return send(false)
   }
 
-  const field = 'rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 px-3 py-2 w-full'
+  const field = 'rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 px-3 py-2 w-full min-w-0'
   return (
     <form onSubmit={submit} className="grid gap-3 rounded-lg bg-white dark:bg-slate-900 p-4 shadow sm:grid-cols-2">
       <input className={field} placeholder="What did you skip?" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -68,7 +68,7 @@ export function EntryForm({ onSubmit }: { onSubmit: (e: EntryInput) => Promise<v
       <select className={field} value={category} onChange={(e) => setCategory(e.target.value as Category)}>
         {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
       </select>
-      <input className={field} type="date" value={skippedAt} onChange={(e) => setSkippedAt(e.target.value)} />
+      <input className={`${field} appearance-none text-left`} type="date" value={skippedAt} onChange={(e) => setSkippedAt(e.target.value)} />
       <input className={`${field} sm:col-span-2`} placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
       {error && <p className="text-sm text-red-600 dark:text-red-400 sm:col-span-2">{error}</p>}
       <div className="grid gap-3 sm:col-span-2">

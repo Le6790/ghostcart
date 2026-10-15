@@ -34,7 +34,7 @@ export function EntryEditor({
     }
   }
 
-  const field = 'rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 px-2 py-1.5 w-full text-sm'
+  const field = 'rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 px-2 py-1.5 w-full min-w-0 text-sm'
   return (
     <form onSubmit={save} className="grid w-full gap-2 sm:grid-cols-2" aria-label={`Edit ${entry.title}`}>
       <input className={field} aria-label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -42,7 +42,7 @@ export function EntryEditor({
       <select className={field} aria-label="Category" value={category} onChange={(e) => setCategory(e.target.value as Category)}>
         {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
       </select>
-      <input className={field} aria-label="Date" type="date" value={skippedAt} onChange={(e) => setSkippedAt(e.target.value)} />
+      <input className={`${field} appearance-none text-left`} aria-label="Date" type="date" value={skippedAt} onChange={(e) => setSkippedAt(e.target.value)} />
       <input className={`${field} sm:col-span-2`} aria-label="Note" placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
       {error && <p className="text-sm text-red-600 dark:text-red-400 sm:col-span-2">{error}</p>}
       <div className="flex gap-2 sm:col-span-2">
