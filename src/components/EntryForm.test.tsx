@@ -92,3 +92,34 @@ describe('EntryForm cooldown', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 })
+
+describe('EntryForm park help', () => {
+  const helpButton = () => screen.getByRole('button', { name: 'What does parking do?' })
+
+  it('is hidden until the question mark is clicked, then toggles', async () => {
+    const { user } = setup()
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    await user.click(helpButton())
+    expect(screen.getByRole('tooltip')).toHaveTextContent(/won't count as savings until the cooldown ends/i)
+    await user.click(helpButton())
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+  })
+
+  it('closes on Escape and on an outside click', async () => {
+    const { user } = setup()
+    await user.click(helpButton())
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    await user.click(helpButton())
+    await user.click(screen.getByPlaceholderText('Note (optional)'))
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+  })
+
+  it('does not submit the form or park the item', async () => {
+    const { onSubmit, user } = setup()
+    await user.type(screen.getByPlaceholderText('What did you skip?'), 'Hat')
+    await user.type(screen.getByPlaceholderText('Amount ($)'), '10')
+    await user.click(helpButton())
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+})
