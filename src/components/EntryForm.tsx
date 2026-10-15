@@ -60,9 +60,9 @@ export function EntryForm({ onSubmit }: { onSubmit: (e: EntryInput) => Promise<v
     return send(false)
   }
 
-  const field = 'rounded border border-slate-300 px-3 py-2 w-full'
+  const field = 'rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 px-3 py-2 w-full'
   return (
-    <form onSubmit={submit} className="grid gap-3 rounded-lg bg-white p-4 shadow sm:grid-cols-2">
+    <form onSubmit={submit} className="grid gap-3 rounded-lg bg-white dark:bg-slate-900 p-4 shadow sm:grid-cols-2">
       <input className={field} placeholder="What did you skip?" value={title} onChange={(e) => setTitle(e.target.value)} />
       <input className={field} placeholder="Amount ($)" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
       <select className={field} value={category} onChange={(e) => setCategory(e.target.value as Category)}>
@@ -70,7 +70,7 @@ export function EntryForm({ onSubmit }: { onSubmit: (e: EntryInput) => Promise<v
       </select>
       <input className={field} type="date" value={skippedAt} onChange={(e) => setSkippedAt(e.target.value)} />
       <input className={`${field} sm:col-span-2`} placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
-      {error && <p className="text-sm text-red-600 sm:col-span-2">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400 sm:col-span-2">{error}</p>}
       <div className="grid gap-3 sm:col-span-2">
         <button className="rounded bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700">
           I didn't buy it
@@ -78,7 +78,7 @@ export function EntryForm({ onSubmit }: { onSubmit: (e: EntryInput) => Promise<v
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="flex-1 rounded border border-emerald-600 px-4 py-2 font-medium text-emerald-700 hover:bg-emerald-50"
+            className="flex-1 rounded border border-emerald-600 px-4 py-2 font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950"
             onClick={() => void send(true)}
           >
             Park it for {cooldown || '?'} days
@@ -86,7 +86,7 @@ export function EntryForm({ onSubmit }: { onSubmit: (e: EntryInput) => Promise<v
           <div ref={helpRef} className="relative">
             <button
               type="button"
-              className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-400 text-sm text-slate-500 hover:bg-slate-100"
+              className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-400 dark:border-slate-500 text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               aria-label="What does parking do?"
               aria-expanded={helpOpen}
               aria-controls="park-help"
@@ -98,7 +98,7 @@ export function EntryForm({ onSubmit }: { onSubmit: (e: EntryInput) => Promise<v
               <div
                 id="park-help"
                 role="tooltip"
-                className="absolute bottom-full right-0 z-10 mb-2 w-64 rounded-lg bg-slate-800 p-3 text-sm text-white shadow-lg"
+                className="absolute bottom-full right-0 z-10 mb-2 w-64 rounded-lg bg-slate-800 dark:bg-slate-700 p-3 text-sm text-white shadow-lg"
               >
                 Not sure yet? Park the item instead of logging it as skipped. It won't count as savings until the
                 cooldown ends, then you decide: still want it, or let it go.
@@ -106,7 +106,7 @@ export function EntryForm({ onSubmit }: { onSubmit: (e: EntryInput) => Promise<v
             )}
           </div>
           <input
-            className="w-20 rounded border border-slate-300 px-2 py-2"
+            className="w-20 rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 px-2 py-2"
             type="number"
             min={1}
             max={90}

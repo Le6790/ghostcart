@@ -81,14 +81,14 @@ export function TrendChart({
   const activePoint = active === null ? null : points[active]
 
   const toggle = (on: boolean) =>
-    `rounded px-2 py-1 text-sm ${on ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`
+    `rounded px-2 py-1 text-sm ${on ? 'bg-emerald-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`
 
   return (
-    <section className="space-y-3 rounded-lg bg-white p-4 shadow">
+    <section className="space-y-3 rounded-lg bg-white dark:bg-slate-900 p-4 shadow">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="font-semibold">Savings trend</h2>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Last {n} {unit}
           </p>
         </div>
@@ -101,25 +101,25 @@ export function TrendChart({
               Weekly
             </button>
           </div>
-          <button className="text-sm text-slate-500 underline hover:text-slate-800" onClick={() => setTable((t) => !t)}>
+          <button className="text-sm text-slate-500 dark:text-slate-400 underline hover:text-slate-800 dark:hover:text-slate-100" onClick={() => setTable((t) => !t)}>
             {table ? 'Show chart' : 'Show table'}
           </button>
         </div>
       </div>
 
       {empty ? (
-        <p className="py-8 text-center text-slate-500">Nothing saved in this period yet.</p>
+        <p className="py-8 text-center text-slate-500 dark:text-slate-400">Nothing saved in this period yet.</p>
       ) : table ? (
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-slate-500">
+            <tr className="text-left text-slate-500 dark:text-slate-400">
               <th className="py-1 font-normal">{period === 'month' ? 'Month' : 'Week'}</th>
               <th className="py-1 text-right font-normal">Saved</th>
             </tr>
           </thead>
           <tbody>
             {points.map((p) => (
-              <tr key={p.start} className="border-t border-slate-100">
+              <tr key={p.start} className="border-t border-slate-100 dark:border-slate-800">
                 <td className="py-1">{fullLabel(p, period)}</td>
                 <td className="py-1 text-right tabular-nums">{formatCents(p.totalCents)}</td>
               </tr>
@@ -131,8 +131,8 @@ export function TrendChart({
           <svg viewBox={`0 0 ${W} ${H}`} className="block w-full" role="group" aria-label={`Money saved per ${period}`}>
             {ticks.map((t) => (
               <g key={t}>
-                <line x1={ML} x2={W - MR} y1={y(t * 100)} y2={y(t * 100)} className="stroke-slate-200" vectorEffect="non-scaling-stroke" />
-                <text x={ML - 6} y={y(t * 100)} textAnchor="end" dominantBaseline="middle" fontSize={10} className="fill-slate-500">
+                <line x1={ML} x2={W - MR} y1={y(t * 100)} y2={y(t * 100)} className="stroke-slate-200 dark:stroke-slate-700" vectorEffect="non-scaling-stroke" />
+                <text x={ML - 6} y={y(t * 100)} textAnchor="end" dominantBaseline="middle" fontSize={10} className="fill-slate-500 dark:fill-slate-400">
                   {compact(t)}
                 </text>
               </g>
@@ -148,12 +148,12 @@ export function TrendChart({
                     />
                   )}
                   {labelled.has(i) && (
-                    <text x={cx(i)} y={barTop - 5} textAnchor="middle" fontSize={10} className="fill-slate-700">
+                    <text x={cx(i)} y={barTop - 5} textAnchor="middle" fontSize={10} className="fill-slate-700 dark:fill-slate-200">
                       {compact(Math.round(p.totalCents / 100))}
                     </text>
                   )}
                   {showAxisLabel(i) && (
-                    <text x={cx(i)} y={BASE + 16} textAnchor="middle" fontSize={10} className="fill-slate-500">
+                    <text x={cx(i)} y={BASE + 16} textAnchor="middle" fontSize={10} className="fill-slate-500 dark:fill-slate-400">
                       {axisLabel(p, period)}
                     </text>
                   )}
@@ -184,7 +184,7 @@ export function TrendChart({
           {activePoint && active !== null && (
             <div
               role="status"
-              className="pointer-events-none absolute top-0 -translate-x-1/2 rounded-lg bg-slate-800 px-3 py-2 text-sm text-white shadow-lg"
+              className="pointer-events-none absolute top-0 -translate-x-1/2 rounded-lg bg-slate-800 dark:bg-slate-700 px-3 py-2 text-sm text-white shadow-lg"
               style={{ left: `clamp(56px, ${(cx(active) / W) * 100}%, calc(100% - 56px))` }}
             >
               <p className="font-semibold">{formatCents(activePoint.totalCents)}</p>

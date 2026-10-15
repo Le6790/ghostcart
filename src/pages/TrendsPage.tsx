@@ -24,7 +24,7 @@ export default function TrendsPage() {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Trends</h2>
-      {error && <p className="rounded bg-red-50 p-3 text-red-700">{error}</p>}
+      {error && <p className="rounded bg-red-50 dark:bg-red-950 p-3 text-red-700 dark:text-red-300">{error}</p>}
       <TrendChart points={points} period={period} onPeriodChange={setPeriod} />
     </div>
   )

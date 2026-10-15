@@ -18,14 +18,14 @@ export function TemptedList({
   return (
     <section className="space-y-2">
       <h2 className="font-semibold">Cooling off</h2>
-      <ul className="divide-y divide-slate-200 rounded-lg bg-white shadow">
+      <ul className="divide-y divide-slate-200 dark:divide-slate-800 rounded-lg bg-white dark:bg-slate-900 shadow">
         {sorted.map((e) => {
           const ready = !!e.decideBy && e.decideBy <= now
           return (
-            <li key={e.id} className={`flex items-center justify-between gap-3 p-3 ${ready ? 'bg-amber-50' : ''}`}>
+            <li key={e.id} className={`flex items-center justify-between gap-3 p-3 ${ready ? 'bg-amber-50 dark:bg-amber-950' : ''}`}>
               <div className="min-w-0">
                 <p className="truncate font-medium">{e.title}</p>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   {ready ? 'Ready to decide' : `Decide by ${e.decideBy}`} · {formatCents(e.amountCents)}
                 </p>
               </div>
@@ -38,13 +38,13 @@ export function TemptedList({
                   Skip it
                 </button>
                 <button
-                  className="rounded border border-slate-300 px-2 py-1 hover:bg-slate-100"
+                  className="rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
                   aria-label={`Bought ${e.title}`}
                   onClick={() => onResolve(e, 'bought')}
                 >
                   Bought it
                 </button>
-                <button className="text-slate-400 hover:text-red-600" aria-label={`Delete ${e.title}`} onClick={() => onDelete(e.id)}>✕</button>
+                <button className="text-slate-400 hover:text-red-600 dark:hover:text-red-400" aria-label={`Delete ${e.title}`} onClick={() => onDelete(e.id)}>✕</button>
               </div>
             </li>
           )

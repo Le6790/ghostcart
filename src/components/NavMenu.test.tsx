@@ -2,8 +2,13 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NavMenu } from './NavMenu.tsx'
+
+beforeEach(() => {
+  localStorage.clear()
+  document.documentElement.classList.remove('dark')
+})
 
 const setup = (path = '/', onRefresh = vi.fn()) => {
   render(
@@ -53,5 +58,29 @@ describe('NavMenu', () => {
     await user.click(button)
     await user.click(screen.getByRole('button', { name: 'Refresh' }))
     expect(onRefresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('has a dark mode switch that toggles the theme and remembers it', async () => {
+    const { user, button } = setup()
+    await user.click(button)
+    const sw = screen.getByRole('switch', { name: 'Dark mode' })
+    expect(sw).toHaveAttribute('aria-checked', 'false')
+    await user.click(sw)
+    expect(sw).toHaveAttribute('aria-checked', 'true')
+    expect(document.documentElement).toHaveClass('dark')
+    expect(localStorage.getItem('theme')).toBe('dark')
+    await user.click(sw)
+    expect(sw).toHaveAttribute('aria-checked', 'false')
+    expect(document.documentElement).not.toHaveClass('dark')
+  })
+
+  it('starts on when dark was saved, and keeps the menu open after toggling', async () => {
+    localStorage.setItem('theme', 'dark')
+    const { user, button } = setup()
+    await user.click(button)
+    const sw = screen.getByRole('switch', { name: 'Dark mode' })
+    expect(sw).toHaveAttribute('aria-checked', 'true')
+    await user.click(sw)
+    expect(screen.getByRole('navigation')).toBeInTheDocument()
   })
 })

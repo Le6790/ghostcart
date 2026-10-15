@@ -30,15 +30,15 @@ export default function HomePage() {
   const history = entries.filter((e) => e.status !== 'tempted')
 
   const stat = (label: string, value: string) => (
-    <div className="rounded-lg bg-white p-4 shadow">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="text-2xl font-bold text-emerald-700">{value}</p>
+    <div className="rounded-lg bg-white dark:bg-slate-900 p-4 shadow">
+      <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{value}</p>
     </div>
   )
 
   return (
     <div className="space-y-4">
-      {error && <p className="rounded bg-red-50 p-3 text-red-700">{error}</p>}
+      {error && <p className="rounded bg-red-50 dark:bg-red-950 p-3 text-red-700 dark:text-red-300">{error}</p>}
       {summary && (
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {stat('Total saved', formatCents(summary.totalCents))}
@@ -48,7 +48,7 @@ export default function HomePage() {
         </section>
       )}
       {summary && summary.readyToDecide > 0 && (
-        <p className="rounded bg-amber-50 p-3 text-amber-800">
+        <p className="rounded bg-amber-50 dark:bg-amber-950 p-3 text-amber-800 dark:text-amber-200">
           {summary.readyToDecide} {summary.readyToDecide === 1 ? 'item is' : 'items are'} ready to decide.
         </p>
       )}
@@ -65,7 +65,7 @@ export default function HomePage() {
       />
       <div className="flex items-center justify-between">
         <h2 className="font-semibold">History</h2>
-        <select className="rounded border border-slate-300 px-2 py-1 text-sm" value={category} onChange={(e) => setCategory(e.target.value)}>
+        <select className="rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 px-2 py-1 text-sm" value={category} onChange={(e) => setCategory(e.target.value)}>
           <option value="">All categories</option>
           {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>

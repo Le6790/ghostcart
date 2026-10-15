@@ -11,7 +11,7 @@ export default function App() {
   useEffect(() => { api.me().then(setMe).catch(() => {}) }, [])
 
   return (
-    <div className="mx-auto min-h-screen max-w-3xl space-y-4 bg-slate-50 p-4">
+    <div className="mx-auto min-h-screen max-w-3xl space-y-4 bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 p-4">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
           <Link to="/" className="flex items-center gap-2">
@@ -20,7 +20,7 @@ export default function App() {
           </Link>
         </h1>
         <div className="flex items-center gap-3">
-          {me && <span className="text-sm text-slate-500">{me.name}</span>}
+          {me && <span className="text-sm text-slate-500 dark:text-slate-400">{me.name}</span>}
           <NavMenu />
         </div>
       </header>

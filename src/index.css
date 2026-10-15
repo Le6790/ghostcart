@@ -1,1 +1,12 @@
 @import 'tailwindcss';
+
+/* Dark mode is driven by a `dark` class on <html> (set by the inline script in index.html and
+   by src/theme.ts), not by the OS setting alone, so the in-app switch can override it. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html.dark {
+  color-scheme: dark; /* native inputs, selects and scrollbars follow */
+}
+html.dark body {
+  background-color: #020617; /* slate-950: the margins around the centred column */
+}
